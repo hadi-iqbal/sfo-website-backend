@@ -107,8 +107,10 @@ jobs:
           test -s release.tar.gz
           tar -xzf release.tar.gz
           rm -f release.tar.gz
-          mkdir -p storage/app
+          mkdir -p storage/app bootstrap/cache
           cp -f knowledge/*.pdf storage/app/
+          rm -f bootstrap/cache/*.php
+          php artisan package:discover --ansi
           php artisan config:clear
           connection=$(php -r 'require "vendor/autoload.php"; $app = require "bootstrap/app.php"; $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); echo config("database.default");')
           test "$connection" = "mysql"
