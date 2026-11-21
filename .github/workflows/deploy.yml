@@ -48,7 +48,7 @@ jobs:
           security: loose
           timeout: 600000
           local-dir: ./
-          server-dir: sfo-api/
+          server-dir: ./
           dangerous-clean-slate: false
           exclude: |
             **/.git*
