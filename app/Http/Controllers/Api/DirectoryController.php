@@ -96,8 +96,8 @@ class DirectoryController extends Controller
         $this->assertTrack($user, $profile->track);
 
         $data = $request->validate([
-            'status' => ['sometimes', 'in:pending,approved,rejected'],
-            'review_note' => ['nullable', 'string', 'max:2000'],
+            'status' => ['sometimes', 'in:pending,approved,rejected,changes_requested'],
+            'review_note' => ['required_if:status,changes_requested', 'nullable', 'string', 'max:2000'],
             'name' => ['sometimes', 'string', 'max:120'],
             'title' => ['nullable', 'string', 'max:120'],
             'license_number' => ['sometimes', 'string', 'max:80'],
@@ -109,7 +109,7 @@ class DirectoryController extends Controller
             'bio' => ['sometimes', 'string', 'max:2000'],
         ]);
 
-        if (isset($data['status']) && ! $user->hasPermission('directory.review')) {
+        if (($request->has('status') || $request->has('review_note')) && ! $user->hasPermission('directory.review')) {
             abort(403, 'You can view this directory, but you cannot approve or reject applications.');
         }
 

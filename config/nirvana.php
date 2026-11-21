@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'google_client_id' => env('NIRVANA_GOOGLE_CLIENT_ID', '36584349348-h8dqc2qgqs2j7mmlkdsfr7nds4q1ll1l.apps.googleusercontent.com'),
+    'openai_key' => env('NIRVANA_OPENAI_KEY'),
+    'tls_ca_bundle' => env('NIRVANA_TLS_CA_BUNDLE'),
+    'model' => env('NIRVANA_MODEL', 'gpt-6-luna'),
+    'knowledge_store' => env('NIRVANA_KNOWLEDGE_STORE'),
+    'knowledge_pdf' => env('NIRVANA_KNOWLEDGE_PDF', base_path('../sfo_backend-main/sfo_backend-main/RADON AI.pdf')),
+    'website_pdf' => env('NIRVANA_WEBSITE_PDF', base_path('../output/pdf/sfo-public-website-knowledge-2026-11.pdf')),
+    'rate_version' => env('NIRVANA_RATE_VERSION', 'legacy-2026-04'),
+    'zoom_account' => env('NIRVANA_ZOOM_ACCOUNT'),
+    'zoom_client' => env('NIRVANA_ZOOM_CLIENT'),
+    'zoom_secret' => env('NIRVANA_ZOOM_SECRET'),
+    'zoom_host' => env('NIRVANA_ZOOM_HOST'),
+    'zoom_webhook_secret' => env('NIRVANA_ZOOM_WEBHOOK_SECRET'),
+    'send_invites' => env('NIRVANA_SEND_INVITES', false),
+    'booking_timezone' => env('NIRVANA_BOOKING_TIMEZONE', 'America/New_York'),
+    'booking_hours' => env('NIRVANA_BOOKING_HOURS', '9,10,13,14,15,16'),
+    'staff_emails' => array_filter(array_map('trim', explode(',', env('NIRVANA_STAFF_EMAILS', 'NirvanaAI@securityfinancialonline.com,marlon@securityfinancialonline.com')))),
+    'email_transport' => env('NIRVANA_EMAIL_TRANSPORT', 'graph'),
+    'graph_tenant' => env('MS_TENANT_ID'),
+    'graph_client' => env('MS_CLIENT_ID'),
+    'graph_secret' => env('MS_CLIENT_SECRET'),
+    'graph_sender' => env('MS_SENDER_EMAIL'),
+    'end_grace_seconds' => (int) env('NIRVANA_END_GRACE_SECONDS', 90),
+    'stale_minutes' => (int) env('NIRVANA_STALE_MINUTES', 30),
+];

@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call([CompanySeeder::class, TeamProfileDemoSeeder::class, AboutNarrativeSeeder::class, AboutFaqSeeder::class]);
         foreach (config('sfo.permissions') as $permission) {
             Permission::updateOrCreate(['slug' => $permission['slug']], $permission);
         }

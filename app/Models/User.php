@@ -20,11 +20,15 @@ class User extends Authenticatable
         'password',
         'is_super_admin',
         'is_active',
+        'portal_theme',
+        'avatar_path',
+        'requires_profile_setup',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'avatar_path',
     ];
 
     protected function casts(): array
@@ -34,6 +38,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_super_admin' => 'boolean',
             'is_active' => 'boolean',
+            'requires_profile_setup' => 'boolean',
         ];
     }
 
@@ -73,6 +78,9 @@ class User extends Authenticatable
             'is_super_admin' => $this->is_super_admin,
             'is_active' => $this->is_active,
             'permissions' => $this->permissionSlugs(),
+            'portal_theme' => $this->portal_theme ?? 'light',
+            'avatar_version' => $this->avatar_path ? basename($this->avatar_path) : null,
+            'requires_profile_setup' => (bool) $this->requires_profile_setup,
         ];
     }
 }
