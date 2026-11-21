@@ -69,6 +69,8 @@ jobs:
             **/.env.backup
             **/.env.production
             **/.env.local
+            **/*.sqlite
+            **/*.sqlite-journal
             **/node_modules/**
             **/tests/**
             **/*.pem
@@ -84,19 +86,7 @@ jobs:
             **/storage/app/*.pem
             **/bootstrap/cache/*.php
 
-      - name: Check for a cPanel shell
-        id: shell
-        env:
-          SSH_HOST: ${{ secrets.CPANEL_SSH_HOST }}
-        run: |
-          if [ -n "$SSH_HOST" ]; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Migrate on the server
-        if: steps.shell.outputs.enabled == 'true'
+      - name: Apply new tables without touching existing rows
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.CPANEL_SSH_HOST }}
@@ -104,8 +94,16 @@ jobs:
           key: ${{ secrets.CPANEL_SSH_KEY }}
           password: ${{ secrets.CPANEL_SSH_PASSWORD }}
           script: |
+            set -eu
             cd /home/kerana2014/sfo-api
-            php artisan migrate --force
+            test -s .env
+            php artisan config:clear
+            connection=$(php -r 'require "vendor/autoload.php"; $app = require "bootstrap/app.php"; $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); echo config("database.default");')
+            test "$connection" = "mysql"
+            php artisan route:clear
+            php artisan view:clear
+            php artisan migrate --force --no-interaction --isolated
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
+            php artisan queue:restart
