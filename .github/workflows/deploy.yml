@@ -47,44 +47,45 @@ jobs:
           mkdir -p storage/app
           cp -f knowledge/*.pdf storage/app/
           find knowledge -type f -name '*.pdf' -print
+      - name: Pack one release archive
+        run: |
+          tar -czf release.tar.gz \
+            --exclude=./.git \
+            --exclude=./.github \
+            --exclude=./tests \
+            --exclude=./node_modules \
+            --exclude=./release.tar.gz \
+            --exclude=./.env \
+            --exclude=./.env.backup \
+            --exclude=./.env.production \
+            --exclude=./.env.local \
+            --exclude=./storage/logs \
+            --exclude=./storage/framework/cache \
+            --exclude=./storage/framework/sessions \
+            --exclude=./storage/framework/views \
+            --exclude=./storage/app/private \
+            --exclude=./storage/app/public \
+            --exclude=./storage/app/resumes \
+            --exclude=./storage/app/team \
+            --exclude=./bootstrap/cache \
+            --exclude='*.pem' \
+            --exclude='*.sqlite' \
+            --exclude='*.sqlite-journal' \
+            .
+          tar -tzf release.tar.gz | grep -E '(^|/)[.]env$' && exit 1 || true
+          test -s release.tar.gz
 
-      - name: Upload to cPanel
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+      - name: Upload the release
+        uses: appleboy/scp-action@v0.1.7
         with:
-          server: ${{ secrets.CPANEL_FTP_SERVER }}
-          username: ${{ secrets.CPANEL_FTP_USERNAME }}
-          password: ${{ secrets.CPANEL_FTP_PASSWORD }}
-          port: 21
-          protocol: ftps
-          security: loose
-          timeout: 600000
-          local-dir: ./
-          server-dir: ./
-          dangerous-clean-slate: false
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/.github/**
-            **/.env
-            **/.env.backup
-            **/.env.production
-            **/.env.local
-            **/*.sqlite
-            **/*.sqlite-journal
-            **/node_modules/**
-            **/tests/**
-            **/*.pem
-            **/*.log
-            **/storage/logs/**
-            **/storage/framework/cache/**
-            **/storage/framework/sessions/**
-            **/storage/framework/views/**
-            **/storage/app/private/**
-            **/storage/app/public/**
-            **/storage/app/resumes/**
-            **/storage/app/team/**
-            **/storage/app/*.pem
-            **/bootstrap/cache/*.php
+          host: ${{ secrets.CPANEL_SSH_HOST }}
+          username: ${{ secrets.CPANEL_SSH_USERNAME }}
+          key: ${{ secrets.CPANEL_SSH_KEY }}
+          port: 22
+          timeout: 10m
+          source: release.tar.gz
+          target: /home/kerana2014/sfo-api
+          overwrite: true
 
       - name: Apply new tables without touching existing rows
         uses: appleboy/ssh-action@v1.2.2
@@ -92,11 +93,16 @@ jobs:
           host: ${{ secrets.CPANEL_SSH_HOST }}
           username: ${{ secrets.CPANEL_SSH_USERNAME }}
           key: ${{ secrets.CPANEL_SSH_KEY }}
-          password: ${{ secrets.CPANEL_SSH_PASSWORD }}
+          port: 22
           script: |
             set -eu
             cd /home/kerana2014/sfo-api
             test -s .env
+            test -s release.tar.gz
+            tar -xzf release.tar.gz
+            rm -f release.tar.gz
+            mkdir -p storage/app
+            cp -f knowledge/*.pdf storage/app/
             php artisan config:clear
             connection=$(php -r 'require "vendor/autoload.php"; $app = require "bootstrap/app.php"; $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); echo config("database.default");')
             test "$connection" = "mysql"
