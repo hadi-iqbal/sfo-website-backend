@@ -148,9 +148,7 @@ class NirvanaTest extends TestCase
     public function test_default_knowledge_publish_uses_the_original_pdf(): void
     {
         $pdf = config('nirvana.knowledge_pdf');
-        if (!is_file($pdf)) {
-            $this->markTestSkipped('Legacy PDF is not present.');
-        }
+        $this->assertFileExists($pdf);
         $digest = hash_file('sha256', $pdf);
         config(['nirvana.openai_key' => 'test', 'nirvana.knowledge_store' => 'vs_approved']);
         Http::preventStrayRequests();
@@ -170,10 +168,9 @@ class NirvanaTest extends TestCase
     public function test_website_pdf_attaches_to_the_original_store_without_replacing_it(): void
     {
         $original = config('nirvana.knowledge_pdf');
-        $website = base_path('../output/pdf/sfo-public-website-knowledge-2026-11.pdf');
-        if (!is_file($original) || !is_file($website)) {
-            $this->markTestSkipped('Both local PDFs are required.');
-        }
+        $website = config('nirvana.website_pdf');
+        $this->assertFileExists($original);
+        $this->assertFileExists($website);
         $originalDigest = hash_file('sha256', $original);
         $websiteDigest = hash_file('sha256', $website);
         config(['nirvana.openai_key' => 'test', 'nirvana.knowledge_store' => 'vs_approved', 'nirvana.website_pdf' => $website]);
@@ -728,10 +725,8 @@ class NirvanaTest extends TestCase
 
     public function test_the_supplied_sqlite_snapshot_can_be_imported_with_exact_rates(): void
     {
-        $source = base_path('../sfo_backend-main/sfo_backend-main/rapid_rater.db');
-        if (!is_file($source)) {
-            $this->markTestSkipped('Legacy SQLite snapshot is not present.');
-        }
+        $source = base_path('knowledge/rapid_rater.db');
+        $this->assertFileExists($source);
         $this->artisan('nirvana:import-rates', ['sqlite' => $source, 'version' => 'test-snapshot'])
             ->expectsOutput('Imported 16319 rows for test-snapshot.')->assertSuccessful();
         $this->assertDatabaseCount('nirvana_rates', 16319);
