@@ -77,41 +77,46 @@ jobs:
           test -s "$RUNNER_TEMP/release.tar.gz"
           cp "$RUNNER_TEMP/release.tar.gz" release.tar.gz
 
+      - name: Prepare the cPanel key
+        env:
+          SSH_KEY: ${{ secrets.CPANEL_SSH_KEY }}
+        run: |
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" | tr -d '\r' > ~/.ssh/cpanel
+          chmod 600 ~/.ssh/cpanel
+
       - name: Upload the release
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.CPANEL_SSH_HOST }}
-          username: ${{ secrets.CPANEL_SSH_USERNAME }}
-          key: ${{ secrets.CPANEL_SSH_KEY }}
-          port: 22
-          timeout: 10m
-          source: release.tar.gz
-          target: /home/kerana2014/sfo-api
-          overwrite: true
+        env:
+          SSH_HOST: ${{ secrets.CPANEL_SSH_HOST }}
+          SSH_USER: ${{ secrets.CPANEL_SSH_USERNAME }}
+        run: |
+          ssh -i ~/.ssh/cpanel -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -p 22 "$SSH_USER@$SSH_HOST" "mkdir -p /home/kerana2014/sfo-api"
+          scp -i ~/.ssh/cpanel -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -P 22 release.tar.gz "$SSH_USER@$SSH_HOST:/home/kerana2014/sfo-api/release.tar.gz"
 
       - name: Apply new tables without touching existing rows
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          host: ${{ secrets.CPANEL_SSH_HOST }}
-          username: ${{ secrets.CPANEL_SSH_USERNAME }}
-          key: ${{ secrets.CPANEL_SSH_KEY }}
-          port: 22
-          script: |
-            set -eu
-            cd /home/kerana2014/sfo-api
-            test -s .env
-            test -s release.tar.gz
-            tar -xzf release.tar.gz
-            rm -f release.tar.gz
-            mkdir -p storage/app
-            cp -f knowledge/*.pdf storage/app/
-            php artisan config:clear
-            connection=$(php -r 'require "vendor/autoload.php"; $app = require "bootstrap/app.php"; $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); echo config("database.default");')
-            test "$connection" = "mysql"
-            php artisan route:clear
-            php artisan view:clear
-            php artisan migrate --force --no-interaction --isolated
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
-            php artisan queue:restart
+        env:
+          SSH_HOST: ${{ secrets.CPANEL_SSH_HOST }}
+          SSH_USER: ${{ secrets.CPANEL_SSH_USERNAME }}
+        run: |
+          ssh -i ~/.ssh/cpanel -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -p 22 "$SSH_USER@$SSH_HOST" bash -s <<'EOF'
+          set -eu
+          export TERM="${TERM:-xterm}"
+          cd /home/kerana2014/sfo-api
+          test -s .env
+          test -s release.tar.gz
+          tar -xzf release.tar.gz
+          rm -f release.tar.gz
+          mkdir -p storage/app
+          cp -f knowledge/*.pdf storage/app/
+          php artisan config:clear
+          connection=$(php -r 'require "vendor/autoload.php"; $app = require "bootstrap/app.php"; $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); echo config("database.default");')
+          test "$connection" = "mysql"
+          php artisan route:clear
+          php artisan view:clear
+          php artisan migrate --force --no-interaction --isolated
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          php artisan queue:restart
+          EOF
