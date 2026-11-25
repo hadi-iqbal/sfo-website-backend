@@ -18,14 +18,62 @@ class NirvanaCorrespondence
 
     private function send(string $recipient, string $subject, string $title, string $body, ?string $url = null, ?string $button = null): bool
     {
-        $html = '<div style="font:16px/1.6 Arial,sans-serif;color:#0c2148;max-width:640px;margin:auto;padding:32px">'
-            .'<p style="color:#ff7b00;font-weight:bold;letter-spacing:.1em">SECURITY FINANCIAL ONLINE</p>'
-            .'<h1 style="font-size:28px;line-height:1.2">'.$this->escape($title).'</h1>'
-            .'<div style="white-space:pre-wrap">'.$this->escape($body).'</div>';
+        $safeTitle = $this->escape($title);
+        $safeBody = nl2br($this->escape($body), false);
+
+        $html = '<!DOCTYPE html><html lang="en"><head>'
+            .'<meta charset="utf-8">'
+            .'<meta name="viewport" content="width=device-width,initial-scale=1">'
+            .'<meta name="color-scheme" content="light">'
+            .'<title>'.$safeTitle.'</title></head>'
+            .'<body style="margin:0;padding:0;background-color:#d5deeb;">'
+            // Hidden preheader text (shown next to the subject in inbox lists)
+            .'<div style="display:none;max-height:0;overflow:hidden;opacity:0;font-size:1px;line-height:1px;color:#d5deeb;">'.$safeTitle.'</div>'
+            .'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#d5deeb" style="background-color:#d5deeb;">'
+            .'<tr><td align="center" style="padding:28px 12px;">'
+            .'<table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:640px;">'
+
+            // Header band
+            .'<tr><td bgcolor="#0c2148" style="background-color:#0c2148;padding:30px 36px 26px 36px;border-radius:12px 12px 0 0;font-family:Arial,Helvetica,sans-serif;">'
+            .'<div style="color:#ff7b00;font-size:13px;font-weight:bold;letter-spacing:2px;line-height:1.4;">SECURITY FINANCIAL ONLINE</div>'
+            .'<div style="color:#ffffff;font-size:22px;font-weight:bold;line-height:1.3;padding-top:10px;">Welcome to Securityfinancialonline.com</div>'
+            .'<div style="color:#d5deeb;font-size:14px;line-height:1.5;padding-top:6px;">Nationwide Insurance Protection Since 1997</div>'
+            .'</td></tr>'
+
+            // Orange accent bar
+            .'<tr><td height="5" bgcolor="#ff7b00" style="background-color:#ff7b00;font-size:0;line-height:0;height:5px;">&nbsp;</td></tr>'
+
+            // Content card
+            .'<tr><td bgcolor="#ffffff" style="background-color:#ffffff;padding:36px 36px 12px 36px;font-family:Arial,Helvetica,sans-serif;color:#0c2148;">'
+            .'<h1 style="margin:0 0 20px 0;font-size:26px;line-height:1.25;font-weight:bold;color:#0c2148;font-family:Arial,Helvetica,sans-serif;">'.$safeTitle.'</h1>'
+            .'<div style="font-size:16px;line-height:1.65;color:#0c2148;font-family:Arial,Helvetica,sans-serif;">'.$safeBody.'</div>'
+            .'</td></tr>';
+
         if ($url && $button) {
-            $html .= '<p><a href="'.$this->escape($url).'" style="display:inline-block;background:#0c2148;color:white;padding:12px 20px;border-radius:24px;text-decoration:none">'.$this->escape($button).'</a></p>';
+            $html .= '<tr><td bgcolor="#ffffff" align="left" style="background-color:#ffffff;padding:20px 36px 12px 36px;">'
+                .'<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>'
+                .'<td align="center" bgcolor="#0c2148" style="background-color:#0c2148;border-radius:28px;">'
+                .'<a href="'.$this->escape($url).'" target="_blank" style="display:inline-block;padding:14px 30px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:28px;">'.$this->escape($button).'</a>'
+                .'</td></tr></table>'
+                .'</td></tr>';
         }
-        $html .= '<p style="border-top:1px solid #d5deeb;padding-top:16px;color:#52637d">Securityfinancialonline.com · (866) 674-5527</p></div>';
+
+        $html .= '<tr><td bgcolor="#ffffff" style="background-color:#ffffff;padding:12px 36px 0 36px;font-size:0;line-height:0;">&nbsp;</td></tr>'
+
+            // Footer
+            .'<tr><td bgcolor="#ffffff" style="background-color:#ffffff;padding:0 36px 32px 36px;border-radius:0 0 12px 12px;font-family:Arial,Helvetica,sans-serif;">'
+            .'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
+            .'<td style="border-top:1px solid #d5deeb;padding-top:20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#52637d;">'
+            .'<div style="color:#0c2148;font-weight:bold;">Securityfinancialonline.com</div>'
+            .'<div>Nationwide Insurance Protection Since 1997</div>'
+            .'<div style="padding-top:6px;">Call us: <a href="tel:+18666745527" style="color:#ff7b00;font-weight:bold;text-decoration:none;">(866) 674-5527</a></div>'
+            .'</td></tr></table>'
+            .'</td></tr>'
+
+            .'</table>'
+            .'</td></tr></table>'
+            .'</body></html>';
+
         try {
             if (config('nirvana.email_transport') === 'graph') {
                 app(MicrosoftGraphMail::class)->send($recipient, $subject, $html);
